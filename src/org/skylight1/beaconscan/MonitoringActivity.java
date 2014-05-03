@@ -36,10 +36,6 @@ public class MonitoringActivity extends Activity implements IBeaconConsumer  {
 		Intent myIntent = new Intent(this, RangingActivity.class);
 		this.startActivity(myIntent);
 	}
-	public void onBackgroundClicked(View view) {
-		Intent myIntent = new Intent(this, BackgroundActivity.class);
-		this.startActivity(myIntent);
-	}
 
 	private void verifyBluetooth() {
 
