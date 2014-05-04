@@ -1,4 +1,8 @@
-package org.skylight1.beaconscan;
+package org.skylight1.beaconscan.androidwear;
+
+import org.skylight1.beaconscan.BeaconScanConsumer;
+import org.skylight1.beaconscan.R;
+import org.skylight1.beaconscan.RangingDemoActivity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -14,7 +18,7 @@ import android.view.View;
 import com.radiusnetworks.ibeacon.IBeaconManager;
 
 /**
- *
+ * place holder
  */
 public class MonitoringActivity extends Activity {
 	protected static final String TAG = "MonitoringActivity";
