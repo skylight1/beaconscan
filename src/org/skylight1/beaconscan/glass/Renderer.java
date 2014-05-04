@@ -59,8 +59,7 @@ public class Renderer implements DirectRenderingCallback {
     private final TextView mTipsView;
 
     /**
-     * Creates a new instance of the {@code CompassRenderer} with the specified context,
-     * orientation manager, and landmark collection.
+     * Creates a new instance of the {@code Renderer}
      */
     public Renderer(Context context) {
         LayoutInflater inflater = LayoutInflater.from(context);
@@ -219,4 +218,7 @@ public class Renderer implements DirectRenderingCallback {
             }
         }
     }
+	public View getViewById(int content) {
+		return mLayout.findViewWithTag(content);
+	}
 }

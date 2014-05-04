@@ -16,11 +16,11 @@ public class BeaconScanConsumer implements IBeaconConsumer {
 	public static final String EXTRA_DATA = "EXTRA_DATA";
 	protected static final String TAG = "BeaconScanConsumer";
 	private IBeaconManager iBeaconManager;
-	private Context applicatinoContext;
+	private Context applicationContext;
 
 	public BeaconScanConsumer(IBeaconManager iBeaconManager, Context context) {
 		this.iBeaconManager = iBeaconManager;
-		applicatinoContext = context;
+		applicationContext = context;
 	}
 
 	@Override
@@ -53,26 +53,24 @@ public class BeaconScanConsumer implements IBeaconConsumer {
 
 	@Override
 	public Context getApplicationContext() {
-		return applicatinoContext;
+		return applicationContext;
 	}
 
 	@Override
 	public void unbindService(ServiceConnection paramServiceConnection) {
-		// TODO Auto-generated method stub
-
+		applicationContext.unbindService(paramServiceConnection);
 	}
 
 	@Override
 	public boolean bindService(Intent paramIntent,
 			ServiceConnection paramServiceConnection, int paramInt) {
-		// TODO Auto-generated method stub
-		return false;
+		return applicationContext.bindService(paramIntent, paramServiceConnection, paramInt);
 	}
 
 	private void broadcastUpdate(final String action, String extraData) {
 		final Intent intent = new Intent(action);
 		intent.putExtra(EXTRA_DATA, extraData);
-		applicatinoContext.sendBroadcast(intent);
+		applicationContext.sendBroadcast(intent);
 	}
 	
 }

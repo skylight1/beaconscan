@@ -16,8 +16,12 @@
 
 package org.skylight1.beaconscan.glass;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.skylight1.beaconscan.BeaconScanConsumer;
 import org.skylight1.beaconscan.R;
+import org.skylight1.beaconscan.RangingDemoActivity;
 
 import android.app.PendingIntent;
 import android.app.Service;
@@ -26,23 +30,35 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.RemoteException;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.view.View;
 
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.LiveCard.PublishMode;
+import com.radiusnetworks.ibeacon.IBeacon;
+import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.IBeaconManager;
+import com.radiusnetworks.ibeacon.MonitorNotifier;
+import com.radiusnetworks.ibeacon.RangeNotifier;
+import com.radiusnetworks.ibeacon.Region;
 
 /**
  * The main application service that manages the lifetime of the compass live card and the objects
  * that help out with orientation tracking and landmarks.
  */
-public class GlassService extends Service {
-
+public class GlassService extends Service implements IBeaconConsumer {
+	protected static final String TAG = "GlassService";
     private static final String LIVE_CARD_TAG = "beaconscan";
-
+	public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
+	private ArrayList<Double> range = new ArrayList<Double>();
+    
     /**
      * A binder that gives other components access to the speech capabilities provided by the
      * service.
@@ -69,7 +85,7 @@ public class GlassService extends Service {
     private LiveCard mLiveCard;
     private Renderer mRenderer;
     
-	protected BeaconScanConsumer beaconConsumer;
+//	protected BeaconScanConsumer beaconConsumer;
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
     
@@ -86,8 +102,8 @@ public class GlassService extends Service {
                 // Do nothing.
             }
         });
-		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
-	    iBeaconManager.bind(beaconConsumer);			
+//		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
+	    iBeaconManager.bind(this);			
     }
 
     @Override
@@ -101,8 +117,8 @@ public class GlassService extends Service {
     	showCard();
  
     	// onResume()
-    	if (iBeaconManager.isBound(beaconConsumer)) {
-    		iBeaconManager.setBackgroundMode(beaconConsumer, false);  //TODO: background  		
+    	if (iBeaconManager.isBound(this)) {
+    		iBeaconManager.setBackgroundMode(this, false);  //TODO: background  		
     	}    	    	
 		registerReceiver(intentReceiver, makeIntentFilter());
         
@@ -142,7 +158,7 @@ public class GlassService extends Service {
     	//	iBeaconManager.setBackgroundMode(beaconConsumer, true); 		
     	//}
     	
-        iBeaconManager.unBind(beaconConsumer);      
+        iBeaconManager.unBind(this);      
         
         super.onDestroy();
     }
@@ -160,5 +176,87 @@ public class GlassService extends Service {
 		intentFilter.addAction(BeaconScanConsumer.UI_INTENT);
 		return intentFilter;
 	}
+
+	@Override
+	public void onIBeaconServiceConnect() {
+		
+        iBeaconManager.setRangeNotifier(new RangeNotifier() {
+	        @Override 
+	        public void didRangeBeaconsInRegion(Collection<IBeacon> iBeacons, Region region) {
+	        	if(iBeacons != null) {
+	        		if (iBeacons.size() > 0) {
+	        			// iterate through each beacon found
+	        			range.clear();
+	        			for (IBeacon i : iBeacons) {
+	        				Log.d(TAG,"UUID:" + i.getProximityUuid() + " dist " + i.getAccuracy());
+	        				if(i.getProximityUuid().equals(Beacon1_UUID)) {
+	        					range.add(i.getAccuracy());
+	        				}
+	        			}
+	
+	        			if(range.size() > 0) {
+	        				setDisplay(range);
+	        			}
+	        			//            	EditText editText = (EditText)RangingDemoActivity.this
+	        			//						.findViewById(R.id.rangingText);
+	        			//            	IBeacon aBeacon = iBeacons.iterator().next();
+	        			//            	logToDisplay("Num Beacons:" + iBeacons.size() + " The first iBeacon I see is about "+ aBeacon.getAccuracy()+" meters away. " + aBeacon.getProximityUuid());            	
+	        		}
+	        	}
+	        }
+        });
+
+        iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
+	        @Override
+	        public void didEnterRegion(Region region) {
+	          String data = "I just saw an iBeacon for the first time!";
+	          Log.e(TAG,data);
+	          mLiveCard.navigate();
+	        }
+	
+	        @Override
+	        public void didExitRegion(Region region) {
+	        	Log.e(TAG,"I no longer see an iBeacon");
+    	        //TODO: send intent with data
+	        }
+	
+	        @Override
+	        public void didDetermineStateForRegion(int state, Region region) {
+	        	Log.e(TAG,"I have just switched from seeing/not seeing iBeacons: "+state);     
+    	        //TODO: send intent with data
+	        }
+        });
+
+        try {
+            iBeaconManager.startMonitoringBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
+        } catch (RemoteException e) {   }		
+	}
+
+    private void setDisplay(ArrayList<Double> range) {
+
+    	if(range != null) {
+    		double distance;
+    		distance = range.get(0);
+    		Log.d(TAG,"distance " + distance );
+    		if(distance <= 1.0f) {    			
+    			setColor(Color.RED);
+    		} else if (distance > 1.0f && distance <= 3.0f) {
+				setColor(Color.BLACK);
+    		} else {
+    			setColor(Color.BLUE);
+    		}
+    		
+    	}
+    }
+    private void setColor(int color) {
+		Runnable task = new Runnable() {
+			public void run() {
+				View v = mRenderer.getViewById(android.R.id.content);
+				v.setBackgroundColor(Color.RED);
+				v.invalidate();
+			}
+		};							
+	    new Handler(Looper.getMainLooper()).post(task);
+    }
 
 }
