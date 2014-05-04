@@ -48,6 +48,10 @@
             </intent-filter>
         </activity>
         
+<!--         <uses-library
+            android:name="com.google.android.glass"
+            android:required="true" />
+ -->
         <activity
             android:name="corg.skylight1.beaconscan.glass.MenuActivity"
             android:theme="@style/MenuTheme" />

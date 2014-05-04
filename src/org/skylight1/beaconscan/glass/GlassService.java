@@ -21,7 +21,6 @@ import java.util.Collection;
 
 import org.skylight1.beaconscan.BeaconScanConsumer;
 import org.skylight1.beaconscan.R;
-import org.skylight1.beaconscan.RangingDemoActivity;
 
 import android.app.PendingIntent;
 import android.app.Service;
@@ -39,6 +38,7 @@ import android.os.RemoteException;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
+import android.widget.RemoteViews;
 
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.LiveCard.PublishMode;
@@ -58,7 +58,15 @@ public class GlassService extends Service implements IBeaconConsumer {
     private static final String LIVE_CARD_TAG = "beaconscan";
 	public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
 	private ArrayList<Double> range = new ArrayList<Double>();
+	private RemoteViews mLiveCardView;
+    private final BeaconScanBinder mBinder = new BeaconScanBinder();
+    private TextToSpeech mSpeech;
+    private LiveCard mLiveCard;
+    private Renderer mRenderer;
     
+//	protected BeaconScanConsumer beaconConsumer;
+    private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
+
     /**
      * A binder that gives other components access to the speech capabilities provided by the
      * service.
@@ -74,20 +82,9 @@ public class GlassService extends Service implements IBeaconConsumer {
             String beaconName = "beacon one"; //TODO:.....
 
             String headingText = "";// TODO: res.getString(format, beaconName);....
-            mSpeech.speak(headingText, TextToSpeech.QUEUE_FLUSH, null);
+//            mSpeech.speak(headingText, TextToSpeech.QUEUE_FLUSH, null);
         }
     }
-
-    private final BeaconScanBinder mBinder = new BeaconScanBinder();
-
-    private TextToSpeech mSpeech;
-
-    private LiveCard mLiveCard;
-    private Renderer mRenderer;
-    
-//	protected BeaconScanConsumer beaconConsumer;
-    private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
-
     
     @Override
     public void onCreate() {
@@ -96,12 +93,12 @@ public class GlassService extends Service implements IBeaconConsumer {
         // Even though the text-to-speech engine is only used in response to a menu action, we
         // initialize it when the application starts so that we avoid delays that could occur
         // if we waited until it was needed to start it up.
-        mSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                // Do nothing.
-            }
-        });
+//        mSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+//            @Override
+//            public void onInit(int status) {
+//                // Do nothing.
+//            }
+//        });
 //		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
 	    iBeaconManager.bind(this);			
     }
@@ -128,29 +125,34 @@ public class GlassService extends Service implements IBeaconConsumer {
     private void showCard() {
         if (mLiveCard == null) {
             mLiveCard = new LiveCard(this, LIVE_CARD_TAG);
-            mRenderer = new Renderer(this);
+            
+			mLiveCardView = new RemoteViews(getPackageName(), R.layout.beaconscan_glass);
+//            mRenderer = new Renderer(this);
+//            mLiveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(mRenderer);
 
-            mLiveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(mRenderer);
-
+			mLiveCardView.setTextViewText(R.id.tips_view,"test");
+			
             // Display the options menu when the live card is tapped.
             Intent menuIntent = new Intent(this, MenuActivity.class);
             menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
-            mLiveCard.attach(this);
+            
+            mLiveCard.attach(this);            
+            
             mLiveCard.publish(PublishMode.REVEAL);
         } else {
             mLiveCard.navigate();
         }
 	}
-
+    
 	@Override
     public void onDestroy() {
         if (mLiveCard != null && mLiveCard.isPublished()) {
             mLiveCard.unpublish();
             mLiveCard = null;
         }
-        mSpeech.shutdown();
-        mSpeech = null;
+//        mSpeech.shutdown();
+//	        mSpeech = null;
         
         //onPause():
         unregisterReceiver(intentReceiver);
@@ -166,8 +168,7 @@ public class GlassService extends Service implements IBeaconConsumer {
 	private final BroadcastReceiver intentReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			Log.d("GLASS ERVICE",intent.getExtras().getString(BeaconScanConsumer.EXTRA_DATA));
-			
+			Log.d("GLASS ERVICE",intent.getExtras().getString(BeaconScanConsumer.EXTRA_DATA));			
             mLiveCard.navigate();
 		}
 	};
@@ -192,20 +193,15 @@ public class GlassService extends Service implements IBeaconConsumer {
 	        				if(i.getProximityUuid().equals(Beacon1_UUID)) {
 	        					range.add(i.getAccuracy());
 	        				}
-	        			}
-	
+	        			}	
 	        			if(range.size() > 0) {
 	        				setDisplay(range);
 	        			}
-	        			//            	EditText editText = (EditText)RangingDemoActivity.this
-	        			//						.findViewById(R.id.rangingText);
-	        			//            	IBeacon aBeacon = iBeacons.iterator().next();
-	        			//            	logToDisplay("Num Beacons:" + iBeacons.size() + " The first iBeacon I see is about "+ aBeacon.getAccuracy()+" meters away. " + aBeacon.getProximityUuid());            	
 	        		}
 	        	}
 	        }
         });
-
+/*
         iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
 	        @Override
 	        public void didEnterRegion(Region region) {
@@ -226,9 +222,9 @@ public class GlassService extends Service implements IBeaconConsumer {
     	        //TODO: send intent with data
 	        }
         });
-
+*/
         try {
-            iBeaconManager.startMonitoringBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
+            iBeaconManager.startRangingBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
         } catch (RemoteException e) {   }		
 	}
 
@@ -251,9 +247,9 @@ public class GlassService extends Service implements IBeaconConsumer {
     private void setColor(int color) {
 		Runnable task = new Runnable() {
 			public void run() {
-				View v = mRenderer.getViewById(android.R.id.content);
-				v.setBackgroundColor(Color.RED);
-				v.invalidate();
+				//View v = mRenderer.getViewById(android.R.id.content);
+				//v.setBackgroundColor(Color.RED);
+				//v.invalidate();
 			}
 		};							
 	    new Handler(Looper.getMainLooper()).post(task);
