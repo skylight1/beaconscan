@@ -5,23 +5,20 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 
-import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.IBeaconManager;
-import com.radiusnetworks.ibeacon.MonitorNotifier;
-import com.radiusnetworks.ibeacon.Region;
 
 /**
  * 
  * @author dyoung
  *
  */
-public class MonitoringActivity extends Activity implements IBeaconConsumer  {
+public class MonitoringActivity extends Activity {
 	protected static final String TAG = "MonitoringActivity";
+	protected BeaconScanConsumer beaconConsumer;
+    private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +26,8 @@ public class MonitoringActivity extends Activity implements IBeaconConsumer  {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_monitoring);
 		verifyBluetooth();
-	    iBeaconManager.bind(this);			
+		beaconConsumer = new BeaconScanConsumer(iBeaconManager);
+	    iBeaconManager.bind(beaconConsumer);			
 	}
 	
 	public void onRangingClicked(View view) {
@@ -65,67 +63,28 @@ public class MonitoringActivity extends Activity implements IBeaconConsumer  {
 				@Override
 				public void onDismiss(DialogInterface dialog) {
 					finish();
-		            System.exit(0);					
+		            System.exit(0);  //TODO: really?
 				}
-				
 			});
-			builder.show();
-			
-		}
-		
+			builder.show();	
+		}		
 	}	
-
-    private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
     @Override 
     protected void onDestroy() {
         super.onDestroy();
-        iBeaconManager.unBind(this);
+        iBeaconManager.unBind(beaconConsumer);
     }
     @Override 
     protected void onPause() {
     	super.onPause();
-    	if (iBeaconManager.isBound(this)) iBeaconManager.setBackgroundMode(this, true);    		
+    	if (iBeaconManager.isBound(beaconConsumer)) iBeaconManager.setBackgroundMode(beaconConsumer, true);    		
     }
+
     @Override 
     protected void onResume() {
     	super.onResume();
-    	if (iBeaconManager.isBound(this)) iBeaconManager.setBackgroundMode(this, false);    		
+    	if (iBeaconManager.isBound(beaconConsumer)) iBeaconManager.setBackgroundMode(beaconConsumer, false);    		
     }    
-    
-    private void logToDisplay(final String line) {
-    	runOnUiThread(new Runnable() {
-    	    public void run() {
-    	    	EditText editText = (EditText)MonitoringActivity.this
-    					.findViewById(R.id.monitoringText);
-       	    	editText.append(line+"\n");            	    	    		
-    	    }
-    	});
-    }
-    @Override
-    public void onIBeaconServiceConnect() {
-        iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
-        @Override
-        public void didEnterRegion(Region region) {
-          logToDisplay("I just saw an iBeacon for the first time!");       
-        }
-
-        @Override
-        public void didExitRegion(Region region) {
-        	logToDisplay("I no longer see an iBeacon");
-        }
-
-        @Override
-        public void didDetermineStateForRegion(int state, Region region) {
-        	logToDisplay("I have just switched from seeing/not seeing iBeacons: "+state);     
-        }
-
-
-        });
-
-        try {
-            iBeaconManager.startMonitoringBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
-        } catch (RemoteException e) {   }
-    }
-	
+    	
 }
