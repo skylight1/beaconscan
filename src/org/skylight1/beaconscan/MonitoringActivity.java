@@ -34,7 +34,7 @@ public class MonitoringActivity extends Activity {
 	}
 	
 	public void onRangingClicked(View view) {
-		Intent myIntent = new Intent(this, RangingActivity.class);
+		Intent myIntent = new Intent(this, RangingDemoActivity.class);
 		this.startActivity(myIntent);
 	}
 

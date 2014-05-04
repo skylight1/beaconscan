@@ -41,6 +41,13 @@
             <intent-filter>
             </intent-filter>
         </activity>
+                <activity
+            android:name="org.skylight1.beaconscan.RangingDemoActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+            </intent-filter>
+        </activity>
+        
         <activity
             android:name="corg.skylight1.beaconscan.glass.MenuActivity"
             android:theme="@style/MenuTheme" />

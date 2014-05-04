@@ -47,7 +47,8 @@ public class RangingActivity extends Activity implements IBeaconConsumer {
             if (iBeacons.size() > 0) {
             	EditText editText = (EditText)RangingActivity.this
 						.findViewById(R.id.rangingText);
-            	logToDisplay("The first iBeacon I see is about "+iBeacons.iterator().next().getAccuracy()+" meters away.");            	
+            	IBeacon aBeacon = iBeacons.iterator().next();
+            	logToDisplay("Num Beacons:" + iBeacons.size() + " The first iBeacon I see is about "+ aBeacon.getAccuracy()+" meters away. " + aBeacon.getProximityUuid());            	
             }
         }
 
