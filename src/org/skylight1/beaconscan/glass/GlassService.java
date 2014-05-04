@@ -16,18 +16,24 @@
 
 package org.skylight1.beaconscan.glass;
 
+import org.skylight1.beaconscan.BeaconScanConsumer;
 import org.skylight1.beaconscan.R;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.os.Binder;
 import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.LiveCard.PublishMode;
+import com.radiusnetworks.ibeacon.IBeaconManager;
 
 /**
  * The main application service that manages the lifetime of the compass live card and the objects
@@ -41,7 +47,7 @@ public class GlassService extends Service {
      * A binder that gives other components access to the speech capabilities provided by the
      * service.
      */
-    public class CompassBinder extends Binder {
+    public class BeaconScanBinder extends Binder {
         /**
          * Read the current heading aloud using the text-to-speech engine.
          */
@@ -56,13 +62,17 @@ public class GlassService extends Service {
         }
     }
 
-    private final CompassBinder mBinder = new CompassBinder();
+    private final BeaconScanBinder mBinder = new BeaconScanBinder();
 
     private TextToSpeech mSpeech;
 
     private LiveCard mLiveCard;
     private Renderer mRenderer;
+    
+	protected BeaconScanConsumer beaconConsumer;
+    private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
+    
     @Override
     public void onCreate() {
         super.onCreate();
@@ -76,7 +86,8 @@ public class GlassService extends Service {
                 // Do nothing.
             }
         });
-
+		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
+	    iBeaconManager.bind(beaconConsumer);			
     }
 
     @Override
@@ -86,6 +97,19 @@ public class GlassService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+    	
+    	showCard();
+ 
+    	// onResume()
+    	if (iBeaconManager.isBound(beaconConsumer)) {
+    		iBeaconManager.setBackgroundMode(beaconConsumer, false);  //TODO: background  		
+    	}    	    	
+		registerReceiver(intentReceiver, makeIntentFilter());
+        
+        return START_STICKY;
+    }
+
+    private void showCard() {
         if (mLiveCard == null) {
             mLiveCard = new LiveCard(this, LIVE_CARD_TAG);
             mRenderer = new Renderer(this);
@@ -101,11 +125,9 @@ public class GlassService extends Service {
         } else {
             mLiveCard.navigate();
         }
+	}
 
-        return START_STICKY;
-    }
-
-    @Override
+	@Override
     public void onDestroy() {
         if (mLiveCard != null && mLiveCard.isPublished()) {
             mLiveCard.unpublish();
@@ -113,6 +135,30 @@ public class GlassService extends Service {
         }
         mSpeech.shutdown();
         mSpeech = null;
+        
+        //onPause():
+        unregisterReceiver(intentReceiver);
+    	//if (iBeaconManager.isBound(beaconConsumer)) {
+    	//	iBeaconManager.setBackgroundMode(beaconConsumer, true); 		
+    	//}
+    	
+        iBeaconManager.unBind(beaconConsumer);      
+        
         super.onDestroy();
     }
+    
+	private final BroadcastReceiver intentReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.d("GLASS ERVICE",intent.getExtras().getString(BeaconScanConsumer.EXTRA_DATA));
+			
+            mLiveCard.navigate();
+		}
+	};
+	private static IntentFilter makeIntentFilter() {
+		final IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction(BeaconScanConsumer.UI_INTENT);
+		return intentFilter;
+	}
+
 }

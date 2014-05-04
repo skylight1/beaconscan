@@ -36,15 +36,15 @@ public class MenuActivity extends Activity {
 
     private final Handler mHandler = new Handler();
 
-    private GlassService.CompassBinder mCompassService;
+    private GlassService.BeaconScanBinder mGlassService;
     private boolean mAttachedToWindow;
     private boolean mOptionsMenuOpen;
 
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            if (service instanceof GlassService.CompassBinder) {
-                mCompassService = (GlassService.CompassBinder) service;
+            if (service instanceof GlassService.BeaconScanBinder) {
+                mGlassService = (GlassService.BeaconScanBinder) service;
                 openOptionsMenu();
             }
         }
@@ -76,7 +76,7 @@ public class MenuActivity extends Activity {
 
     @Override
     public void openOptionsMenu() {
-        if (!mOptionsMenuOpen && mAttachedToWindow && mCompassService != null) {
+        if (!mOptionsMenuOpen && mAttachedToWindow && mGlassService != null) {
             super.openOptionsMenu();
         }
     }
@@ -91,7 +91,7 @@ public class MenuActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.read_aloud:
-                mCompassService.readHeadingAloud();
+                mGlassService.readHeadingAloud();
                 return true;
             case R.id.stop:
                 // Stop the service at the end of the message queue for proper options menu

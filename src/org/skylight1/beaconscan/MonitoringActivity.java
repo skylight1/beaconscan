@@ -2,8 +2,11 @@ package org.skylight1.beaconscan;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -47,7 +50,7 @@ public class MonitoringActivity extends Activity {
 					@Override
 					public void onDismiss(DialogInterface dialog) {
 						finish();
-			            System.exit(0);					
+			            System.exit(0);  //TODO: really?				
 					}					
 				});
 				builder.show();
@@ -78,13 +81,29 @@ public class MonitoringActivity extends Activity {
     @Override 
     protected void onPause() {
     	super.onPause();
-    	if (iBeaconManager.isBound(beaconConsumer)) iBeaconManager.setBackgroundMode(beaconConsumer, true);    		
+    	if (iBeaconManager.isBound(beaconConsumer)) {
+    		iBeaconManager.setBackgroundMode(beaconConsumer, true);
+    	}
+		unregisterReceiver(intentReceiver);
     }
 
     @Override 
     protected void onResume() {
     	super.onResume();
-    	if (iBeaconManager.isBound(beaconConsumer)) iBeaconManager.setBackgroundMode(beaconConsumer, false);    		
+    	if (iBeaconManager.isBound(beaconConsumer)) {
+    		iBeaconManager.setBackgroundMode(beaconConsumer, false);
+    	}
+		registerReceiver(intentReceiver, makeIntentFilter());
     }    
-    	
+	private final BroadcastReceiver intentReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.d(TAG,intent.getExtras().getString(BeaconScanConsumer.EXTRA_DATA));
+		}
+	};
+	private static IntentFilter makeIntentFilter() {
+		final IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction(BeaconScanConsumer.UI_INTENT);
+		return intentFilter;
+	}    	
 }

@@ -12,6 +12,8 @@ import com.radiusnetworks.ibeacon.MonitorNotifier;
 import com.radiusnetworks.ibeacon.Region;
 
 public class BeaconScanConsumer implements IBeaconConsumer {
+	public static final String UI_INTENT = "UI_INTENT";
+	public static final String EXTRA_DATA = "EXTRA_DATA";
 	protected static final String TAG = "BeaconScanConsumer";
 	private IBeaconManager iBeaconManager;
 	private Context applicatinoContext;
@@ -26,20 +28,21 @@ public class BeaconScanConsumer implements IBeaconConsumer {
         iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
 	        @Override
 	        public void didEnterRegion(Region region) {
-	          Log.d(TAG,"I just saw an iBeacon for the first time!");  
-	          //TODO: register intent, UI listeners, send intent with data
+	          String data = "I just saw an iBeacon for the first time!";
+	          Log.d(TAG,data);
+	          broadcastUpdate(UI_INTENT, data);
 	        }
 	
 	        @Override
 	        public void didExitRegion(Region region) {
 	        	Log.d(TAG,"I no longer see an iBeacon");
-    	        //TODO: register intent, UI listeners, send intent with data
+    	        //TODO: send intent with data
 	        }
 	
 	        @Override
 	        public void didDetermineStateForRegion(int state, Region region) {
 	        	Log.d(TAG,"I have just switched from seeing/not seeing iBeacons: "+state);     
-    	        //TODO: register intent, UI listeners, send intent with data
+    	        //TODO: send intent with data
 	        }
         });
 
@@ -68,8 +71,8 @@ public class BeaconScanConsumer implements IBeaconConsumer {
 
 	private void broadcastUpdate(final String action, String extraData) {
 		final Intent intent = new Intent(action);
-//		intent.putExtra(EXTRA_DATA, extraData);
-//		sendBroadcast(intent);
+		intent.putExtra(EXTRA_DATA, extraData);
+		applicatinoContext.sendBroadcast(intent);
 	}
 	
 }

@@ -35,19 +35,11 @@ import com.google.android.glass.timeline.DirectRenderingCallback;
 import com.google.android.glass.timeline.LiveCard;
 
 /**
- * The surface callback that provides the rendering logic for the compass live card. This callback
- * also manages the lifetime of the sensor and location event listeners (through
- * {@link OrientationManager}) so that tracking only occurs when the card is visible.
+ * The surface callback that provides the rendering logic for the live card.
  */
 public class Renderer implements DirectRenderingCallback {
 
     private static final String TAG = Renderer.class.getSimpleName();
-
-    /**
-     * The (absolute) pitch angle beyond which the compass will display a message telling the user
-     * that his or her head is at too steep an angle to be reliable.
-     */
-    private static final float TOO_STEEP_PITCH_DEGREES = 70.0f;
 
     /** The refresh rate, in frames per second, of the compass. */
     private static final int REFRESH_RATE_FPS = 45;
@@ -56,8 +48,6 @@ public class Renderer implements DirectRenderingCallback {
     private static final long FRAME_TIME_MILLIS = TimeUnit.SECONDS.toMillis(1) / REFRESH_RATE_FPS;
 
     private SurfaceHolder mHolder;
-    private boolean mTooSteep;
-    private boolean mInterference;
     private RenderThread mRenderThread;
     private int mSurfaceWidth;
     private int mSurfaceHeight;
@@ -65,10 +55,8 @@ public class Renderer implements DirectRenderingCallback {
     private boolean mRenderingPaused;
 
     private final FrameLayout mLayout;
-//    private final CompassView mCompassView;
     private final RelativeLayout mTipsContainer;
     private final TextView mTipsView;
-//    private final OrientationManager mOrientationManager;
 
     /**
      * Creates a new instance of the {@code CompassRenderer} with the specified context,
