@@ -14,9 +14,11 @@ import com.radiusnetworks.ibeacon.Region;
 public class BeaconScanConsumer implements IBeaconConsumer {
 	protected static final String TAG = "BeaconScanConsumer";
 	private IBeaconManager iBeaconManager;
+	private Context applicatinoContext;
 
-	public BeaconScanConsumer(IBeaconManager iBeaconManager) {
+	public BeaconScanConsumer(IBeaconManager iBeaconManager, Context context) {
 		this.iBeaconManager = iBeaconManager;
+		applicatinoContext = context;
 	}
 
 	@Override
@@ -48,8 +50,7 @@ public class BeaconScanConsumer implements IBeaconConsumer {
 
 	@Override
 	public Context getApplicationContext() {
-		// TODO Auto-generated method stub
-		return null;
+		return applicatinoContext;
 	}
 
 	@Override
@@ -65,4 +66,10 @@ public class BeaconScanConsumer implements IBeaconConsumer {
 		return false;
 	}
 
+	private void broadcastUpdate(final String action, String extraData) {
+		final Intent intent = new Intent(action);
+//		intent.putExtra(EXTRA_DATA, extraData);
+//		sendBroadcast(intent);
+	}
+	
 }

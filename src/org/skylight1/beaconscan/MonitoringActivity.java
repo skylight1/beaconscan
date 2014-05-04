@@ -26,7 +26,7 @@ public class MonitoringActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_monitoring);
 		verifyBluetooth();
-		beaconConsumer = new BeaconScanConsumer(iBeaconManager);
+		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
 	    iBeaconManager.bind(beaconConsumer);			
 	}
 	
