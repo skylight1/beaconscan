@@ -7,18 +7,23 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
 
+import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.IBeaconManager;
+import com.radiusnetworks.ibeacon.MonitorNotifier;
+import com.radiusnetworks.ibeacon.Region;
 
 /**
  *
  */
-public class MonitoringActivity extends Activity {
+public class MonitoringActivity extends Activity implements IBeaconConsumer{
 	protected static final String TAG = "MonitoringActivity";
-	protected BeaconScanConsumer beaconConsumer;
+//	protected BeaconScanConsumer beaconConsumer;
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
 	@Override
@@ -27,8 +32,8 @@ public class MonitoringActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_monitoring);
 		verifyBluetooth();
-		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
-	    iBeaconManager.bind(beaconConsumer);			
+//		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
+	    iBeaconManager.bind(this);			
 	}
 	
 	public void onRangingClicked(View view) {
@@ -74,13 +79,13 @@ public class MonitoringActivity extends Activity {
     @Override 
     protected void onDestroy() {
         super.onDestroy();
-        iBeaconManager.unBind(beaconConsumer);
+        iBeaconManager.unBind(this);
     }
     @Override 
     protected void onPause() {
     	super.onPause();
-    	if (iBeaconManager.isBound(beaconConsumer)) {
-    		iBeaconManager.setBackgroundMode(beaconConsumer, true);
+    	if (iBeaconManager.isBound(this)) {
+    		iBeaconManager.setBackgroundMode(this, true);
     	}
 		unregisterReceiver(intentReceiver);
     }
@@ -88,8 +93,8 @@ public class MonitoringActivity extends Activity {
     @Override 
     protected void onResume() {
     	super.onResume();
-    	if (iBeaconManager.isBound(beaconConsumer)) {
-    		iBeaconManager.setBackgroundMode(beaconConsumer, false);
+    	if (iBeaconManager.isBound(this)) {
+    		iBeaconManager.setBackgroundMode(this, false);
     	}
 		registerReceiver(intentReceiver, makeIntentFilter());
     }    
@@ -103,5 +108,50 @@ public class MonitoringActivity extends Activity {
 		final IntentFilter intentFilter = new IntentFilter();
 		intentFilter.addAction(BeaconScanConsumer.UI_INTENT);
 		return intentFilter;
+	}
+
+	@Override
+	public void onIBeaconServiceConnect() {
+        iBeaconManager.setMonitorNotifier(new MonitorNotifier() {
+	        @Override
+	        public void didEnterRegion(Region region) {
+	          String data = "I just saw an iBeacon for the first time!";
+	          Log.d(TAG,data);
+	  			runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							View v = MonitoringActivity.this.findViewById(android.R.id.content);
+							v.setBackgroundColor(Color.RED);
+							v.invalidate();
+						}
+	  				
+	  			});
+	        }
+	
+	        @Override
+	        public void didExitRegion(Region region) {
+	        	Log.d(TAG,"I no longer see an iBeacon");
+	  			runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							View v = MonitoringActivity.this.findViewById(android.R.id.content);
+							v.setBackgroundColor(Color.BLUE);
+							v.invalidate();
+						}
+	  				
+	  			});
+	        }
+	
+	        @Override
+	        public void didDetermineStateForRegion(int state, Region region) {
+	        	Log.d(TAG,"I have just switched from seeing/not seeing iBeacons: "+state);     
+    	        //TODO: send intent with data
+	        }
+        });
+
+        try {
+            iBeaconManager.startMonitoringBeaconsInRegion(new Region("myMonitoringUniqueId", null, null, null));
+        } catch (RemoteException e) {   }
+		
 	}    	
 }

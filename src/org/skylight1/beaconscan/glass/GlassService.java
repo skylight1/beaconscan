@@ -64,6 +64,11 @@ public class GlassService extends Service implements IBeaconConsumer {
     private LiveCard mLiveCard;
     private Renderer mRenderer;
     
+    private final Handler mHandler = new Handler();
+    private final UpdateLiveCardRunnable mUpdateLiveCardRunnable = new UpdateLiveCardRunnable();
+    private static final long DELAY_MILLIS = 1000;
+
+    
 //	protected BeaconScanConsumer beaconConsumer;
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
@@ -100,7 +105,7 @@ public class GlassService extends Service implements IBeaconConsumer {
 //            }
 //        });
 //		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
-	    iBeaconManager.bind(this);			
+//	    iBeaconManager.bind(this);			
     }
 
     @Override
@@ -114,11 +119,11 @@ public class GlassService extends Service implements IBeaconConsumer {
     	showCard();
  
     	// onResume()
-    	if (iBeaconManager.isBound(this)) {
-    		iBeaconManager.setBackgroundMode(this, false);  //TODO: background  		
-    	}    	    	
-		registerReceiver(intentReceiver, makeIntentFilter());
-        
+ //   	if (iBeaconManager.isBound(this)) {
+ //   		iBeaconManager.setBackgroundMode(this, false);  //TODO: background  		
+ //   	}    	    	
+//		registerReceiver(intentReceiver, makeIntentFilter());
+        mHandler.post(mUpdateLiveCardRunnable);
         return START_STICKY;
     }
 
@@ -130,14 +135,14 @@ public class GlassService extends Service implements IBeaconConsumer {
 //            mRenderer = new Renderer(this);
 //            mLiveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(mRenderer);
 
-			mLiveCardView.setTextViewText(R.id.tips_view,"test");
+			mLiveCardView.setTextViewText(R.id.tips_view,"scanning beacons...");
 			
             // Display the options menu when the live card is tapped.
             Intent menuIntent = new Intent(this, MenuActivity.class);
             menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
             
-            mLiveCard.attach(this);            
+            //mLiveCard.attach(this);            
             
             mLiveCard.publish(PublishMode.REVEAL);
         } else {
@@ -148,6 +153,7 @@ public class GlassService extends Service implements IBeaconConsumer {
 	@Override
     public void onDestroy() {
         if (mLiveCard != null && mLiveCard.isPublished()) {
+            mUpdateLiveCardRunnable.setStop(true);
             mLiveCard.unpublish();
             mLiveCard = null;
         }
@@ -160,7 +166,7 @@ public class GlassService extends Service implements IBeaconConsumer {
     	//	iBeaconManager.setBackgroundMode(beaconConsumer, true); 		
     	//}
     	
-        iBeaconManager.unBind(this);      
+//        iBeaconManager.unBind(this);      
         
         super.onDestroy();
     }
@@ -244,9 +250,10 @@ public class GlassService extends Service implements IBeaconConsumer {
     		
     	}
     }
-    private void setColor(int color) {
+    private void setColor(final int color) {
 		Runnable task = new Runnable() {
 			public void run() {
+				Log.e(TAG,"set color =" + color);
 				//View v = mRenderer.getViewById(android.R.id.content);
 				//v.setBackgroundColor(Color.RED);
 				//v.invalidate();
@@ -254,5 +261,37 @@ public class GlassService extends Service implements IBeaconConsumer {
 		};							
 	    new Handler(Looper.getMainLooper()).post(task);
     }
+    private class UpdateLiveCardRunnable implements Runnable{
 
+        private boolean mIsStopped = false;
+
+        /*
+         * Updates the card with a fake score every 30 seconds as a demonstration.
+         * You also probably want to display something useful in your live card.
+         *
+         * If you are executing a long running task to get data to update a
+         * live card(e.g, making a web call), do this in another thread or
+         * AsyncTask.
+         */
+        public void run(){
+            if(!isStopped()){
+
+    			mLiveCardView.setTextViewText(R.id.tips_view,"...working...");
+
+                // Always call setViews() to update the live card's RemoteViews.
+                mLiveCard.setViews(mLiveCardView);
+
+                // Queue another score update in DELAY_MILLIS.
+                mHandler.postDelayed(mUpdateLiveCardRunnable, DELAY_MILLIS);
+            }
+        }
+
+        public boolean isStopped() {
+            return mIsStopped;
+        }
+
+        public void setStop(boolean isStopped) {
+            this.mIsStopped = isStopped;
+        }
+    }
 }

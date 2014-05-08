@@ -35,7 +35,8 @@
             android:layout_marginBottom="@dimen/card_margin"
             android:singleLine="true"
             android:ellipsize="end"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
+            android:text="scanning..."
+            android:textAppearance="?android:attr/textAppearanceLarge" />
 
     </RelativeLayout>
 
