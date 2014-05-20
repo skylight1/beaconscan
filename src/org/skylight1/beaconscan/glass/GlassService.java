@@ -57,8 +57,8 @@ public class GlassService extends Service implements IBeaconConsumer {
 	protected static final String TAG = "GlassService";
     private static final String LIVE_CARD_TAG = "beaconscan";
 	
-//    public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
-	public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
+    public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
+//	public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
 
 	
 	private ArrayList<Double> range = new ArrayList<Double>();
@@ -89,7 +89,7 @@ public class GlassService extends Service implements IBeaconConsumer {
             String[] spokenDirections = res.getStringArray(R.array.spoken_beacon_names);
             String beaconName = "one"; //TODO:.....
 
-            String headingText = "Welcome to Beacon Crawl for Glass. Find the hidden beacon. then post a photo when you find it";// TODO: res.getString(format, beaconName);....
+            String headingText = "Welcome to Beacon Crawl for Glass. Find the hidden beacon. then post a photo when you find it. To cool your Glass and stop scanning, select stop in the menu.";// TODO: res.getString(format, beaconName);....
             mSpeech.speak(headingText, TextToSpeech.QUEUE_FLUSH, null);
         }
     }
@@ -212,19 +212,24 @@ public class GlassService extends Service implements IBeaconConsumer {
     			setColor(Color.RED);
     			if(previousColor!=Color.RED) {
     				mSpeech.speak("found the beacon!", TextToSpeech.QUEUE_FLUSH, null);
+    	            mLiveCardView.setTextViewText(R.id.beacpn_text, "found the beacon!");
+    	            mLiveCard.setViews(mLiveCardView);
     			}
     			previousColor=Color.RED;
-  	            mLiveCard.navigate();
     		} else if (distance > 1.0f && distance <= 3.0f) {
 				setColor(Color.MAGENTA);
     			if(previousColor!=Color.MAGENTA) {
     				mSpeech.speak("getting closer", TextToSpeech.QUEUE_FLUSH, null);
+    	            mLiveCardView.setTextViewText(R.id.beacpn_text, "getting closer");
+    	            mLiveCard.setViews(mLiveCardView);
     			}
     			previousColor=Color.MAGENTA;
     		} else {
     			setColor(Color.BLUE);
     			if(previousColor!=Color.BLUE) {
     				mSpeech.speak("beacon in the area", TextToSpeech.QUEUE_FLUSH, null);
+    	            mLiveCardView.setTextViewText(R.id.beacpn_text, "beacon in the area");
+    	            mLiveCard.setViews(mLiveCardView);
     			}
     			previousColor=Color.BLUE;
     		}
