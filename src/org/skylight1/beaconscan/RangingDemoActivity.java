@@ -3,13 +3,15 @@ package org.skylight1.beaconscan;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.skylight1.beaconscan.glass.GlassService;
+
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 
 import com.radiusnetworks.ibeacon.IBeacon;
 import com.radiusnetworks.ibeacon.IBeaconConsumer;
@@ -19,7 +21,9 @@ import com.radiusnetworks.ibeacon.Region;
 
 public class RangingDemoActivity extends Activity implements IBeaconConsumer {
 	public static final String TAG = "RangingDemoActivity";
-	public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
+	
+//  public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
+	public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
 	
 	private ArrayList<Double> range = new ArrayList<Double>();
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
@@ -29,6 +33,7 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
         super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_rangingdemo);
         iBeaconManager.bind(this);
+        stopService(new Intent(this, GlassService.class));
     }
     @Override 
     protected void onDestroy() {
@@ -65,10 +70,6 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
         			if(range.size() > 0) {
         				setDisplay(range);
         			}
-        			//            	EditText editText = (EditText)RangingDemoActivity.this
-        			//						.findViewById(R.id.rangingText);
-        			//            	IBeacon aBeacon = iBeacons.iterator().next();
-        			//            	logToDisplay("Num Beacons:" + iBeacons.size() + " The first iBeacon I see is about "+ aBeacon.getAccuracy()+" meters away. " + aBeacon.getProximityUuid());            	
         		}
         	}
         }
@@ -101,7 +102,7 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
 					@Override
 					public void run() {
 						View v = RangingDemoActivity.this.findViewById(android.R.id.content);
-						v.setBackgroundColor(Color.BLACK);
+						v.setBackgroundColor(Color.MAGENTA);
 						v.invalidate();
 					}
     				
@@ -115,18 +116,7 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
 						v.invalidate();
 					}
     			});	
-    		}
-    		
+    		}		
     	}
-    }
-    
-    private void logToDisplay(final String line) {
-    	runOnUiThread(new Runnable() {
-    	    public void run() {
-    	    	EditText editText = (EditText)RangingDemoActivity.this
-    					.findViewById(R.id.rangingText);
-    	    	editText.append(line+"\n");            	
-    	    }
-    	});
-    }
+    }    
 }

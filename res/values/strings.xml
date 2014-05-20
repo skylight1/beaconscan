@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">BeaconScan</string>
-    <string name="scan_for_beacons">scan for beacons</string>
+    <string name="scan_for_beacons">Beacon Crawl</string>
 
     <string-array name="spoken_beacon_names">
         <item>beacon 1</item>

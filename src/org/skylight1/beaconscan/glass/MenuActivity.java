@@ -91,14 +91,10 @@ public class MenuActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.read_aloud:
-                mGlassService.readHeadingAloud();
+                mGlassService.readAloud();
                 return true;
             case R.id.stop:
-                // Stop the service at the end of the message queue for proper options menu
-                // animation. This is only needed when starting an Activity or stopping a Service
-                // that published a LiveCard.
                 mHandler.post(new Runnable() {
-
                     @Override
                     public void run() {
                         stopService(new Intent(MenuActivity.this, GlassService.class));
@@ -114,11 +110,7 @@ public class MenuActivity extends Activity {
     public void onOptionsMenuClosed(Menu menu) {
         super.onOptionsMenuClosed(menu);
         mOptionsMenuOpen = false;
-
         unbindService(mConnection);
-
-        // We must call finish() from this method to ensure that the activity ends either when an
-        // item is selected from the menu or when the menu is dismissed by swiping down.
         finish();
     }
 }

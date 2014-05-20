@@ -18,16 +18,18 @@ package org.skylight1.beaconscan.glass;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 import org.skylight1.beaconscan.BeaconScanConsumer;
 import org.skylight1.beaconscan.R;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Binder;
@@ -37,15 +39,13 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
-import android.view.View;
+import android.util.Patterns;
 import android.widget.RemoteViews;
 
 import com.google.android.glass.timeline.LiveCard;
-import com.google.android.glass.timeline.LiveCard.PublishMode;
 import com.radiusnetworks.ibeacon.IBeacon;
 import com.radiusnetworks.ibeacon.IBeaconConsumer;
 import com.radiusnetworks.ibeacon.IBeaconManager;
-import com.radiusnetworks.ibeacon.MonitorNotifier;
 import com.radiusnetworks.ibeacon.RangeNotifier;
 import com.radiusnetworks.ibeacon.Region;
 
@@ -56,19 +56,22 @@ import com.radiusnetworks.ibeacon.Region;
 public class GlassService extends Service implements IBeaconConsumer {
 	protected static final String TAG = "GlassService";
     private static final String LIVE_CARD_TAG = "beaconscan";
-	public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
+	
+//    public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
+	public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
+
+	
 	private ArrayList<Double> range = new ArrayList<Double>();
 	private RemoteViews mLiveCardView;
-    private final BeaconScanBinder mBinder = new BeaconScanBinder();
     private TextToSpeech mSpeech;
-    private LiveCard mLiveCard;
-    private Renderer mRenderer;
-    
-    private final Handler mHandler = new Handler();
-    private final UpdateLiveCardRunnable mUpdateLiveCardRunnable = new UpdateLiveCardRunnable();
-    private static final long DELAY_MILLIS = 1000;
+    private LiveCard mLiveCard;    
+    String email = "tester@beaconcrawl.glass";
+    int previousColor = 0;
 
-    
+    //    private final UpdateLiveCardRunnable mUpdateLiveCardRunnable = new UpdateLiveCardRunnable();
+//    private static final long DELAY_MILLIS = 1000;
+
+    private final BeaconScanBinder mBinder = new BeaconScanBinder();
 //	protected BeaconScanConsumer beaconConsumer;
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
 
@@ -80,14 +83,14 @@ public class GlassService extends Service implements IBeaconConsumer {
         /**
          * Read the current heading aloud using the text-to-speech engine.
          */
-        public void readHeadingAloud() {
+        public void readAloud() {
 
             Resources res = getResources();
             String[] spokenDirections = res.getStringArray(R.array.spoken_beacon_names);
-            String beaconName = "beacon one"; //TODO:.....
+            String beaconName = "one"; //TODO:.....
 
-            String headingText = "";// TODO: res.getString(format, beaconName);....
-//            mSpeech.speak(headingText, TextToSpeech.QUEUE_FLUSH, null);
+            String headingText = "Welcome to Beacon Crawl for Glass. Find the hidden beacon. then post a photo when you find it";// TODO: res.getString(format, beaconName);....
+            mSpeech.speak(headingText, TextToSpeech.QUEUE_FLUSH, null);
         }
     }
     
@@ -98,14 +101,16 @@ public class GlassService extends Service implements IBeaconConsumer {
         // Even though the text-to-speech engine is only used in response to a menu action, we
         // initialize it when the application starts so that we avoid delays that could occur
         // if we waited until it was needed to start it up.
-//        mSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-//            @Override
-//            public void onInit(int status) {
-//                // Do nothing.
-//            }
-//        });
+        mSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                // Do nothing.
+            }
+        });
+        
 //		beaconConsumer = new BeaconScanConsumer(iBeaconManager, getApplicationContext());
-//	    iBeaconManager.bind(this);			
+
+        iBeaconManager.bind(this);			
     }
 
     @Override
@@ -113,60 +118,23 @@ public class GlassService extends Service implements IBeaconConsumer {
         return mBinder;
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-    	
-    	showCard();
- 
-    	// onResume()
- //   	if (iBeaconManager.isBound(this)) {
- //   		iBeaconManager.setBackgroundMode(this, false);  //TODO: background  		
- //   	}    	    	
-//		registerReceiver(intentReceiver, makeIntentFilter());
-        mHandler.post(mUpdateLiveCardRunnable);
-        return START_STICKY;
-    }
-
-    private void showCard() {
-        if (mLiveCard == null) {
-            mLiveCard = new LiveCard(this, LIVE_CARD_TAG);
-            
-			mLiveCardView = new RemoteViews(getPackageName(), R.layout.beaconscan_glass);
-//            mRenderer = new Renderer(this);
-//            mLiveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(mRenderer);
-
-			mLiveCardView.setTextViewText(R.id.tips_view,"scanning beacons...");
-			
-            // Display the options menu when the live card is tapped.
-            Intent menuIntent = new Intent(this, MenuActivity.class);
-            menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
-            
-            //mLiveCard.attach(this);            
-            
-            mLiveCard.publish(PublishMode.REVEAL);
-        } else {
-            mLiveCard.navigate();
-        }
-	}
     
 	@Override
     public void onDestroy() {
         if (mLiveCard != null && mLiveCard.isPublished()) {
-            mUpdateLiveCardRunnable.setStop(true);
             mLiveCard.unpublish();
             mLiveCard = null;
         }
-//        mSpeech.shutdown();
-//	        mSpeech = null;
+
+        mSpeech.shutdown();
+        mSpeech = null;
         
         //onPause():
         unregisterReceiver(intentReceiver);
     	//if (iBeaconManager.isBound(beaconConsumer)) {
     	//	iBeaconManager.setBackgroundMode(beaconConsumer, true); 		
-    	//}
-    	
-//        iBeaconManager.unBind(this);      
+    	//}    	
+        iBeaconManager.unBind(this);      
         
         super.onDestroy();
     }
@@ -174,15 +142,16 @@ public class GlassService extends Service implements IBeaconConsumer {
 	private final BroadcastReceiver intentReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			Log.d("GLASS ERVICE",intent.getExtras().getString(BeaconScanConsumer.EXTRA_DATA));			
+			Log.d("GLASS SERVICE",intent.getExtras().getString(BeaconScanConsumer.EXTRA_DATA));			
             mLiveCard.navigate();
 		}
 	};
-	private static IntentFilter makeIntentFilter() {
-		final IntentFilter intentFilter = new IntentFilter();
-		intentFilter.addAction(BeaconScanConsumer.UI_INTENT);
-		return intentFilter;
-	}
+
+//	private static IntentFilter makeIntentFilter() {
+//		final IntentFilter intentFilter = new IntentFilter();
+//		intentFilter.addAction(BeaconScanConsumer.UI_INTENT);
+//		return intentFilter;
+//	}
 
 	@Override
 	public void onIBeaconServiceConnect() {
@@ -235,19 +204,30 @@ public class GlassService extends Service implements IBeaconConsumer {
 	}
 
     private void setDisplay(ArrayList<Double> range) {
-
     	if(range != null) {
     		double distance;
     		distance = range.get(0);
     		Log.d(TAG,"distance " + distance );
     		if(distance <= 1.0f) {    			
     			setColor(Color.RED);
+    			if(previousColor!=Color.RED) {
+    				mSpeech.speak("found the beacon!", TextToSpeech.QUEUE_FLUSH, null);
+    			}
+    			previousColor=Color.RED;
+  	            mLiveCard.navigate();
     		} else if (distance > 1.0f && distance <= 3.0f) {
-				setColor(Color.BLACK);
+				setColor(Color.MAGENTA);
+    			if(previousColor!=Color.MAGENTA) {
+    				mSpeech.speak("getting closer", TextToSpeech.QUEUE_FLUSH, null);
+    			}
+    			previousColor=Color.MAGENTA;
     		} else {
     			setColor(Color.BLUE);
+    			if(previousColor!=Color.BLUE) {
+    				mSpeech.speak("beacon in the area", TextToSpeech.QUEUE_FLUSH, null);
+    			}
+    			previousColor=Color.BLUE;
     		}
-    		
     	}
     }
     private void setColor(final int color) {
@@ -261,37 +241,44 @@ public class GlassService extends Service implements IBeaconConsumer {
 		};							
 	    new Handler(Looper.getMainLooper()).post(task);
     }
-    private class UpdateLiveCardRunnable implements Runnable{
-
-        private boolean mIsStopped = false;
-
-        /*
-         * Updates the card with a fake score every 30 seconds as a demonstration.
-         * You also probably want to display something useful in your live card.
-         *
-         * If you are executing a long running task to get data to update a
-         * live card(e.g, making a web call), do this in another thread or
-         * AsyncTask.
-         */
-        public void run(){
-            if(!isStopped()){
-
-    			mLiveCardView.setTextViewText(R.id.tips_view,"...working...");
-
-                // Always call setViews() to update the live card's RemoteViews.
-                mLiveCard.setViews(mLiveCardView);
-
-                // Queue another score update in DELAY_MILLIS.
-                mHandler.postDelayed(mUpdateLiveCardRunnable, DELAY_MILLIS);
+    
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "onStartCommand");
+                
+        Pattern emailPattern = Patterns.EMAIL_ADDRESS; // API level 8+
+        Account[] accounts = AccountManager.get(getApplicationContext()).getAccounts();
+        for (Account account : accounts) {
+            if (emailPattern.matcher(account.name).matches()) {
+                email = account.name;
+                break;
             }
         }
+        
+        if (mLiveCard == null) {
+            mLiveCard = new LiveCard(this, LIVE_CARD_TAG);
+            mLiveCardView = new RemoteViews(getPackageName(), R.layout.beaconscan_glass);
 
-        public boolean isStopped() {
-            return mIsStopped;
+            mLiveCardView.setTextViewText(R.id.beacpn_text, "scanning beacons...");
+            mLiveCard.setViews(mLiveCardView);
+
+            // Display the options menu when the live card is tapped.
+            Intent menuIntent = new Intent(this, MenuActivity.class);
+            menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
+
+            // Publish the live card
+            mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+
+            Log.d(TAG, "mLiveCard.publish " + mLiveCard.isPublished());
+            
+        } else if (!mLiveCard.isPublished()) {
+            mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+        } else {
+            mLiveCard.navigate();
         }
 
-        public void setStop(boolean isStopped) {
-            this.mIsStopped = isStopped;
-        }
+        return START_STICKY;
     }
+
 }

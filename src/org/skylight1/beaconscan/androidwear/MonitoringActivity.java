@@ -45,7 +45,6 @@ public class MonitoringActivity extends Activity implements IBeaconConsumer {
 	}
 
 	private void verifyBluetooth() {
-
 		try {
 			if (!IBeaconManager.getInstanceForApplication(this).checkAvailability()) {
 				final AlertDialog.Builder builder = new AlertDialog.Builder(this);
