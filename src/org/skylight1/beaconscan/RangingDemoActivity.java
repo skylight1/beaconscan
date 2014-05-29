@@ -6,10 +6,17 @@ import java.util.Collection;
 import org.skylight1.beaconscan.glass.GlassService;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.preview.support.v4.app.NotificationManagerCompat;
+import android.preview.support.wearable.notifications.WearableNotifications;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 
@@ -24,9 +31,14 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
 	
   public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
 //  public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
+
+private static final String EXTRA_EVENT_ID = "EXTRA_EVENT_ID";
+
+private static final String GROUP_KEY = "GROUP_KEY1";
 	
 	private ArrayList<Double> range = new ArrayList<Double>();
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
+    int previousColor = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,21 +94,48 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
     }
     
     private void setDisplay(ArrayList<Double> range) {
+//	    NotificationManagerCompat.from(this).cancelAll();
+	    int notificationId = 1;
+		Bitmap bitmapIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_marker);
 
     	if(range != null) {
     		double distance;
     		distance = range.get(0);
     		Log.d(TAG,"distance " + distance );
     		if(distance <= 1.0f) {
-    			runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						View v = RangingDemoActivity.this.findViewById(android.R.id.content);
-						v.setBackgroundColor(Color.RED);
-						v.invalidate();
-					}
-    				
-    			});
+    			if(previousColor!=Color.RED) {
+	    			runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							View v = RangingDemoActivity.this.findViewById(android.R.id.content);
+							v.setBackgroundColor(Color.RED);
+							v.invalidate();
+						}	    				
+	    			});
+	    			
+	    			Intent viewIntent = new Intent(this, RangingDemoActivity.class);
+	    			viewIntent.putExtra(EXTRA_EVENT_ID, notificationId);
+	    			PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
+
+	    			String eventTitle = getString(R.string.app_name);
+					String eventLocation = "Beacon Found!";
+					NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+	    			        .setContentTitle(eventTitle)
+	    			        .setContentText(eventLocation)
+	    			        .setSmallIcon(R.drawable.ic_launcher)
+	    			        .setLargeIcon(bitmapIcon)
+	    			        .setContentIntent(viewPendingIntent);
+
+			        Notification notification = new WearableNotifications.Builder(notificationBuilder)
+//	                .setGroup(GROUP_KEY)
+	                .build();
+
+	    			NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+	    			notificationManager.notify(notificationId, notification);
+	    			
+    			}
+    			previousColor=Color.RED;
+
     		} else if (distance > 1.0f && distance <= 3.0f) {
     			runOnUiThread(new Runnable() {
 					@Override
