@@ -30,12 +30,10 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
 	public static final String TAG = "RangingDemoActivity";
 	
   public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
-//  public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
+  //public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
 
-private static final String EXTRA_EVENT_ID = "EXTRA_EVENT_ID";
+  private static final String EXTRA_EVENT_ID = "EXTRA_EVENT_ID";
 
-private static final String GROUP_KEY = "GROUP_KEY1";
-	
 	private ArrayList<Double> range = new ArrayList<Double>();
     private IBeaconManager iBeaconManager = IBeaconManager.getInstanceForApplication(this);
     int previousColor = 0;
@@ -46,6 +44,14 @@ private static final String GROUP_KEY = "GROUP_KEY1";
 		setContentView(R.layout.activity_rangingdemo);
         iBeaconManager.bind(this);
         stopService(new Intent(this, GlassService.class));
+     // if running on wearable //TODO: test for 
+		moveTaskToBack(true); 
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     @Override 
     protected void onDestroy() {
@@ -94,10 +100,6 @@ private static final String GROUP_KEY = "GROUP_KEY1";
     }
     
     private void setDisplay(ArrayList<Double> range) {
-//	    NotificationManagerCompat.from(this).cancelAll();
-	    int notificationId = 1;
-		Bitmap bitmapIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_marker);
-
     	if(range != null) {
     		double distance;
     		distance = range.get(0);
@@ -110,29 +112,10 @@ private static final String GROUP_KEY = "GROUP_KEY1";
 							View v = RangingDemoActivity.this.findViewById(android.R.id.content);
 							v.setBackgroundColor(Color.RED);
 							v.invalidate();
+							sendNotification(Color.RED);
 						}	    				
 	    			});
-	    			
-	    			Intent viewIntent = new Intent(this, RangingDemoActivity.class);
-	    			viewIntent.putExtra(EXTRA_EVENT_ID, notificationId);
-	    			PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
-
-	    			String eventTitle = getString(R.string.app_name);
-					String eventLocation = "Beacon Found!";
-					NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-	    			        .setContentTitle(eventTitle)
-	    			        .setContentText(eventLocation)
-	    			        .setSmallIcon(R.drawable.ic_launcher)
-	    			        .setLargeIcon(bitmapIcon)
-	    			        .setContentIntent(viewPendingIntent);
-
-			        Notification notification = new WearableNotifications.Builder(notificationBuilder)
-//	                .setGroup(GROUP_KEY)
-	                .build();
-
-	    			NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-	    			notificationManager.notify(notificationId, notification);
-	    			
+	    				    			
     			}
     			previousColor=Color.RED;
 
@@ -143,6 +126,7 @@ private static final String GROUP_KEY = "GROUP_KEY1";
 						View v = RangingDemoActivity.this.findViewById(android.R.id.content);
 						v.setBackgroundColor(Color.MAGENTA);
 						v.invalidate();
+						sendNotification(Color.MAGENTA);
 					}
     				
     			});
@@ -153,9 +137,45 @@ private static final String GROUP_KEY = "GROUP_KEY1";
 						View v = RangingDemoActivity.this.findViewById(android.R.id.content);
 						v.setBackgroundColor(Color.BLUE);
 						v.invalidate();
+						sendNotification(Color.BLUE);						
 					}
     			});	
     		}		
     	}
-    }    
+    }
+    
+	
+	private void sendNotification(int color) {
+	    final int notificationId = 1;
+	    int resourceid = R.drawable.ic_marker;
+	    if(color==Color.MAGENTA) {
+	    	resourceid = R.drawable.ic_marker2;
+	    } else if(color==Color.BLUE) {
+	    	resourceid = R.drawable.ic_marker3;
+	    }
+		final Bitmap bitmapIcon = BitmapFactory.decodeResource(this.getResources(), resourceid);
+		NotificationManagerCompat.from(this).cancelAll();
+		Intent viewIntent = new Intent(this, RangingDemoActivity.class);
+		viewIntent.putExtra(EXTRA_EVENT_ID, notificationId);
+		PendingIntent viewPendingIntent = PendingIntent.getActivity(this, 0, viewIntent, 0);
+
+		String eventTitle = getString(R.string.app_name);
+		String eventLocation = "- beacon in the area -";
+		if(color==Color.RED) {
+			eventLocation = "Beacon Found!";
+		} else if(color==Color.MAGENTA) {
+			eventLocation = "getting closer...";
+		}
+		NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+		        .setContentTitle(eventTitle)
+		        .setContentText(eventLocation)
+		        .setSmallIcon(R.drawable.ic_launcher)
+		        .setLargeIcon(bitmapIcon)
+		        .setContentIntent(viewPendingIntent);
+
+        Notification notification = new WearableNotifications.Builder(notificationBuilder).build();
+
+		NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+		notificationManager.notify(notificationId, notification);
+	}
 }
