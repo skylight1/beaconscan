@@ -44,14 +44,14 @@ public class RangingDemoActivity extends Activity implements IBeaconConsumer {
 		setContentView(R.layout.activity_rangingdemo);
         iBeaconManager.bind(this);
         stopService(new Intent(this, GlassService.class));
-     // if running on wearable //TODO: test for 
-		moveTaskToBack(true); 
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+// if running on wearable //TODO: test for wearable
+//		moveTaskToBack(true); 
+//		try {
+//			Thread.sleep(5000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
     }
     @Override 
     protected void onDestroy() {
