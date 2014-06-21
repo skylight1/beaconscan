@@ -43,7 +43,6 @@ public class GlassService extends Service implements IBeaconConsumer {
 	
     public static final String Beacon1_UUID="8deefbb9-f738-4297-8040-96668bb44281";
 //	public static final String Beacon1_UUID = new String("E2C56DB5-DFFB-48D2-B060-D0F5A71096E0").toLowerCase();
-
 	
 	private ArrayList<Double> range = new ArrayList<Double>();
 	private RemoteViews mLiveCardView;

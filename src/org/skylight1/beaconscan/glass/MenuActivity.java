@@ -35,7 +35,7 @@ public class MenuActivity extends Activity {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            // Do nothing.
+            // do nothing
         }
     };
 
